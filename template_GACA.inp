@@ -1,0 +1,166 @@
+&GLOBAL
+  PROJECT GACA
+  RUN_TYPE ENERGY
+  PRINT_LEVEL LOW
+&END GLOBAL
+
+&FORCE_EVAL
+  METHOD QMMM
+
+  !=============================================================================
+  ! 1. 定义整个系统 (SUBSYS) - 从外部文件读取
+  !=============================================================================
+  &SUBSYS
+    &CELL
+      A     55.2092650     0.00000000       0.00000000
+      B     0.00000000     55.2092650       0.00000000
+      C     0.00000000     0.00000000       55.2092650
+      PERIODIC XYZ
+    &END CELL
+    
+    &TOPOLOGY
+      ! --- 使用 GA.xyz 结构文件 ---
+      COORD_FILE_NAME 25_test2150.xyz
+      COORD_FILE_FORMAT XYZ
+      ! --- 从prmtop文件读取连接性 ---
+      CONN_FILE_NAME system.prmtop
+      CONNECTIVITY AMBER
+    &END TOPOLOGY
+    
+    ! --- KIND定义, CP2K会根据XYZ文件中的元素自动匹配 ---
+    &KIND C
+      BASIS_SET DZVP-MOLOPT-SR-GTH-q4
+      POTENTIAL GTH-PBE-q4
+    &END KIND
+    &KIND H
+      BASIS_SET DZVP-MOLOPT-SR-GTH-q1
+      POTENTIAL GTH-PBE-q1
+    &END KIND
+    &KIND O
+      BASIS_SET DZVP-MOLOPT-SR-GTH-q6
+      POTENTIAL GTH-PBE-q6
+    &END KIND
+    &KIND S
+      BASIS_SET DZVP-MOLOPT-SR-GTH-q6
+      POTENTIAL GTH-PBE-q6
+    &END KIND
+    &KIND CL-
+      ELEMENT Cl
+      BASIS_SET DZVP-MOLOPT-SR-GTH-q7
+      POTENTIAL GTH-PBE-q7
+    &END KIND
+  &END SUBSYS
+
+  !=============================================================================
+  ! 2. 定义MM区域的力场
+  !=============================================================================
+  &MM
+    &FORCEFIELD
+      PARM_FILE_NAME system.prmtop
+      PARMTYPE AMBER
+      &SPLINE
+        RCUT_NB 9.0
+        EMAX_SPLINE 1000.0
+      &END
+    &END FORCEFIELD
+    &POISSON
+      &EWALD
+        EWALD_TYPE SPME
+        GMAX  28 28 28
+      &END EWALD
+    &END POISSON
+  &END MM
+
+  !=============================================================================
+  ! 3. 定义QM和MM区域的相互作用 (QMMM)
+  !=============================================================================
+  &QMMM
+    &CELL
+      ABC [angstrom] 37.0  30.0  36.0
+      PERIODIC NONE
+    &END CELL
+    ECOUPL GAUSS
+    USE_GEEP_LIB 6
+      &QM_KIND C
+        MM_INDEX 8305..8308 8312..8313 8315..8316 8318..8319 8321 8323 8325..8326 8328 8330..8332 8334..8335 8337..8338 8340 8342 8344..8345 8347 8349..8351 8353..8354 8356..8357 8359 8361 8365 8368 8372 8377 8380 8384 8387 8390 8393 8397 8399 8403 8406 8410 8412 8416 8420 8424 8428 8432 8435 8439 8442 8446 8451 8455 8461 8467 8470 8474
+      &END QM_KIND
+      &QM_KIND H
+        MM_INDEX 8310..8311 8317 8322 8324 8329 8336 8341 8343 8348 8355 8360 8362..8363 8366..8367 8369..8370 8373..8374 8378..8379 8381..8382 8385..8386 8388 8391..8392 8394..8395 8400..8401 8404..8405 8407..8408 8411 8413..8415 8417..8418 8421..8423 8425..8426 8429..8431 8433..8434 8436..8437 8440..8441 8443..8444 8447..8450 8452..8453 8456..8459 8462..8465 8468..8469 8471..8472 8475..8477
+      &END QM_KIND
+      &QM_KIND O
+        MM_INDEX 8364 8371 8375..8376 8383 8389 8396 8398 8402 8409 8419 8427 8438 8445 8454 8460 8466 8473
+      &END QM_KIND
+      &QM_KIND S
+        MM_INDEX 8309 8314 8320 8327 8333 8339 8346 8352 8358
+      &END QM_KIND
+    &END QMMM
+  &DFT
+    UKS
+    BASIS_SET_FILE_NAME  BASIS_MOLOPT
+    POTENTIAL_FILE_NAME  GTH_POTENTIALS
+#   WFN_RESTART_FILE_NAME geo_B-RESTART.wfn
+    CHARGE      1 
+    MULTIPLICITY    2
+    &QS
+      EPS_DEFAULT 1.0E-14
+      &CDFT
+        TYPE_OF_CONSTRAINT Hirshfeld
+        ATOMIC_CHARGES F
+        STRENGTH -0.067129
+        ! --- 目标电荷为 左边两环向右转移一个电子 (边缘两噻吩环失去电子) ---
+        TARGET    0 #Constraint target values
+        &ATOM_GROUP #CDFT
+          #Indices of the atoms involved in the constraint
+          ATOMS 1..12 67..71 165..167 13..24 72..75 168..170
+          #Coefficients of the atoms involved in the constraint
+          COEFF -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+          CONSTRAINT_TYPE CHARGE #Type of constraint
+        &END ATOM_GROUP      
+        &OUTER_SCF
+          TYPE CDFT_CONSTRAINT
+          EPS_SCF 1E-3
+          OPTIMIZER SECANT
+          STEP_SIZE 0.05
+        &END OUTER_SCF
+        &HIRSHFELD_CONSTRAINT
+          SHAPE_FUNCTION DENSITY
+        &END HIRSHFELD_CONSTRAINT
+      &END CDFT
+    &END QS
+    &POISSON
+      PERIODIC NONE
+      PSOLVER MULTIPOLE
+    &END POISSON
+    &XC
+      &XC_FUNCTIONAL PBE
+      &END XC_FUNCTIONAL
+    &END XC
+    &MGRID
+      COMMENSURATE
+      CUTOFF  300
+      REL_CUTOFF  50
+    &END MGRID
+    &SCF
+      MAX_SCF 25
+      EPS_SCF 1.0E-06
+      SCF_GUESS ATOMIC
+      &OT
+        PRECONDITIONER FULL_ALL
+        MINIMIZER DIIS
+        LINESEARCH 2PNT
+        ALGORITHM IRAC
+      &END OT
+      &OUTER_SCF
+        MAX_SCF 100
+        EPS_SCF 1.0E-06
+      &END OUTER_SCF
+      &PRINT
+        &RESTART
+          BACKUP_COPIES 0
+        &END RESTART
+      &END PRINT
+    &END SCF
+  &END DFT
+&END FORCE_EVAL
+
+
