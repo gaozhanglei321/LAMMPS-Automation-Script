@@ -18,7 +18,6 @@
     &TOPOLOGY
       COORD_FILE_NAME 25_test2150.xyz
       COORD_FILE_FORMAT XYZ
-      ! --- 从prmtop文件读取连接性 ---
       CONN_FILE_NAME system.prmtop
       CONNECTIVITY AMBER
     &END TOPOLOGY
