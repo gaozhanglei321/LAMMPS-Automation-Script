@@ -6,10 +6,6 @@
 
 &FORCE_EVAL
   METHOD QMMM
-
-  !=============================================================================
-  ! 1. 定义整个系统 (SUBSYS) - 从外部文件读取
-  !=============================================================================
   &SUBSYS
     &CELL
       A     55.2092650     0.00000000       0.00000000
@@ -19,15 +15,11 @@
     &END CELL
     
     &TOPOLOGY
-      ! --- 使用 GA.xyz 结构文件 ---
       COORD_FILE_NAME 25_test2150.xyz
       COORD_FILE_FORMAT XYZ
-      ! --- 从prmtop文件读取连接性 ---
       CONN_FILE_NAME system.prmtop
       CONNECTIVITY AMBER
     &END TOPOLOGY
-    
-    ! --- KIND定义, CP2K会根据XYZ文件中的元素自动匹配 ---
     &KIND C
       BASIS_SET DZVP-MOLOPT-SR-GTH-q4
       POTENTIAL GTH-PBE-q4
@@ -50,10 +42,6 @@
       POTENTIAL GTH-PBE-q7
     &END KIND
   &END SUBSYS
-
-  !=============================================================================
-  ! 2. 定义MM区域的力场
-  !=============================================================================
   &MM
     &FORCEFIELD
       PARM_FILE_NAME system.prmtop
@@ -70,10 +58,6 @@
       &END EWALD
     &END POISSON
   &END MM
-
-  !=============================================================================
-  ! 3. 定义QM和MM区域的相互作用 (QMMM)
-  !=============================================================================
   &QMMM
     &CELL
       ABC [angstrom] 37.0  30.0  36.0
@@ -107,7 +91,6 @@
         TYPE_OF_CONSTRAINT Hirshfeld
         ATOMIC_CHARGES F
         STRENGTH 0.042576
-        ! --- 目标电荷为 左边两环向右转移一个电子 (边缘两噻吩环失去电子) ---
         TARGET    -2 #Constraint target values
         &ATOM_GROUP #CDFT
           #Indices of the atoms involved in the constraint
